@@ -316,10 +316,24 @@ kubectl get nodes
 
 ---
 
-## Step 6: Cilium CNI インストール
+## Step 6: リポジトリ clone
+
+**CP ノードで実行** — Step 7 以降で使うマニフェストを取得する。
 
 ```bash
-# Helm インストール (手元 PC または CP から実行)
+git clone https://github.com/Strategy-games/infra-repo.git
+cd infra-repo
+git checkout debug
+```
+
+---
+
+## Step 7: Cilium CNI インストール
+
+```bash
+# CP ノードで実行 (infra-repo ディレクトリ内)
+
+# Helm インストール
 curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
 # Cilium Helm リポジトリ追加
@@ -343,7 +357,7 @@ kubectl get nodes
 
 ---
 
-## Step 7: MetalLB インストール
+## Step 8: MetalLB インストール
 
 ```bash
 helm repo add metallb https://metallb.github.io/metallb
@@ -360,9 +374,9 @@ kubectl apply -f k8s-manifests/cluster-wide-apps/metallb/l2-advertisement.yaml
 
 ---
 
-## Step 8: Synology CSI セットアップ
+## Step 9: Synology CSI セットアップ
 
-### 8-1. NAS 側設定
+### 9-1. NAS 側設定
 
 Synology DSM にログインして以下を確認:
 
@@ -370,7 +384,7 @@ Synology DSM にログインして以下を確認:
 2. **コントロールパネル → ファイルサービス → NFS** を有効化
 3. NFS アクセスを k8s ノードの IP レンジ (`192.168.10.0/24`) に許可
 
-### 8-2. k8s 側設定
+### 9-2. k8s 側設定
 
 ```bash
 # Synology CSI の認証情報 Secret を作成
@@ -401,9 +415,9 @@ kubectl get storageclass
 
 ---
 
-## Step 9: Terraform セットアップ
+## Step 10: Terraform セットアップ
 
-### 9-1. Terraform Cloud Workspace 設定
+### 10-1. Terraform Cloud Workspace 設定
 
 1. [app.terraform.io](https://app.terraform.io) → `strategy-games` Organization を開く
 2. **New Workspace** → `infra-debug` を作成
@@ -429,7 +443,7 @@ kubectl config view --raw --minify \
   -o jsonpath='{.clusters[0].cluster.certificate-authority-data}'
 ```
 
-### 9-2. GitHub Actions シークレット設定
+### 10-2. GitHub Actions シークレット設定
 
 リポジトリ Settings → Secrets → Actions:
 
@@ -445,7 +459,7 @@ kubectl config view --raw --minify \
 | `K8S_CA_CERT` | certificate-authority-data (base64) |
 | `DISCORD_WEBHOOK_URL` | Discord Webhook URL |
 
-### 9-3. Terraform 実行
+### 10-3. Terraform 実行
 
 ```bash
 cd terraform
@@ -460,7 +474,7 @@ terraform apply  # 適用 (ArgoCD インストール含む)
 
 ---
 
-## Step 10: Secrets 作成 (手動)
+## Step 11: Secrets 作成 (手動)
 
 ArgoCD 管理外のシークレットを手動で作成する。
 
@@ -479,7 +493,7 @@ kubectl create secret generic mariadb-secrets \
 
 ---
 
-## Step 11: ArgoCD 動作確認
+## Step 12: ArgoCD 動作確認
 
 ```bash
 # ArgoCD CLI インストール
@@ -502,7 +516,7 @@ argocd app sync root
 
 ---
 
-## Step 12: 動作確認
+## Step 13: 動作確認
 
 ```bash
 # --- k8s リソース確認 ---
