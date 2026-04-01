@@ -27,10 +27,12 @@
 > Proxmox の **cloud-init snippet** で初回起動時に `qemu-guest-agent` をインストールする方式を使う。
 > (Proxmox VE 9.x / Debian Trixie ホストで動作確認済み)
 >
-> **⚠️ テンプレートはローカルストレージに作成するため、VM をデプロイする各ノードで個別に実行が必要。**
-> Ceph 等の共有ストレージがある場合は pve01 で一度だけ作ればよい。
+> **⚠️ pve01〜pve03 は同一 Proxmox クラスタのため VMID はクラスタ全体で一意にする必要がある。**
+> テンプレートはローカルストレージに作成するため各ノードで個別に実行するが、VMID を変える。
+> - pve01 テンプレート: VMID **9050**
+> - pve03 テンプレート: VMID **9051**
 
-**pve01・pve03 それぞれで実行 (SSH ログイン後)**
+### 1-1. pve01 で実行
 
 ```bash
 # Debian 12 (Bookworm) genericcloud イメージ取得
@@ -41,7 +43,6 @@ wget https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-genericclou
 pvesm set local --content vztmpl,iso,backup,snippets
 
 # cloud-init vendor snippet 作成
-# 初回起動時に qemu-guest-agent + k8s 事前依存パッケージをインストール
 mkdir -p /var/lib/vz/snippets
 cat > /var/lib/vz/snippets/k8s-node-init.yaml <<'EOF'
 #cloud-config
@@ -67,14 +68,48 @@ qm create 9050 \
   --agent 1 \
   --serial0 socket --vga serial0
 
-# cloud-init vendor snippet をアタッチ
 qm set 9050 --cicustom "vendor=local:snippets/k8s-node-init.yaml"
-
-# ディスクを 32GB に拡張
 qm resize 9050 scsi0 32G
-
-# テンプレート化
 qm template 9050
+```
+
+### 1-2. pve03 で実行 (VMID は 9051 を使う)
+
+```bash
+# イメージ取得 (pve01 と同じ)
+wget https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-genericcloud-amd64.qcow2 \
+  -O /var/lib/vz/template/iso/debian-12-genericcloud-amd64.qcow2
+
+pvesm set local --content vztmpl,iso,backup,snippets
+
+mkdir -p /var/lib/vz/snippets
+cat > /var/lib/vz/snippets/k8s-node-init.yaml <<'EOF'
+#cloud-config
+packages:
+  - qemu-guest-agent
+  - curl
+  - gnupg
+  - apt-transport-https
+  - ca-certificates
+runcmd:
+  - systemctl enable qemu-guest-agent --now
+EOF
+
+# VMID は 9051 (9050 は pve01 で使用済み)
+qm create 9051 \
+  --name debian-12-k8s-template \
+  --memory 4096 --cores 2 \
+  --net0 virtio,bridge=vmbr0,tag=10 \
+  --scsihw virtio-scsi-pci \
+  --scsi0 local-lvm:0,import-from=/var/lib/vz/template/iso/debian-12-genericcloud-amd64.qcow2 \
+  --ide2 local-lvm:cloudinit \
+  --boot c --bootdisk scsi0 \
+  --agent 1 \
+  --serial0 socket --vga serial0
+
+qm set 9051 --cicustom "vendor=local:snippets/k8s-node-init.yaml"
+qm resize 9051 scsi0 32G
+qm template 9051
 ```
 
 ---
@@ -117,7 +152,8 @@ qm start 211
 # pve03 で実行
 # MC サーバーが優先配置されるメイン Worker
 # Ryzen 7 5700X は高シングルスレッド性能 → Paper に最適
-qm clone 9050 212 --name k8s-debug-wk-2 --full
+# pve03 のテンプレートは VMID 9051
+qm clone 9051 212 --name k8s-debug-wk-2 --full
 qm set 212 \
   --memory 24576 --cores 6 \
   --ipconfig0 ip=192.168.10.152/24,gw=192.168.10.1 \
