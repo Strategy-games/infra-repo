@@ -1,0 +1,43 @@
+# Velero Helm values - k8s リソースバックアップ
+# ref: https://github.com/vmware-tanzu/helm-charts/tree/main/charts/velero
+
+# バックアップ先: Synology NAS の MinIO 互換 S3 エンドポイント
+configuration:
+  backupStorageLocation:
+    - name: default
+      provider: aws
+      bucket: velero-backups
+      config:
+        region: minio
+        s3ForcePathStyle: "true"
+        s3Url: http://192.168.11.10:9000  # Synology の MinIO エンドポイント
+        publicUrl: http://192.168.11.10:9000
+
+  volumeSnapshotLocation:
+    - name: default
+      provider: csi
+
+initContainers:
+  - name: velero-plugin-for-aws
+    image: velero/velero-plugin-for-aws:v1.10.0
+    volumeMounts:
+      - mountPath: /target
+        name: plugins
+
+schedules:
+  daily-backup:
+    schedule: "0 3 * * *"  # 毎日 03:00 JST (18:00 UTC)
+    template:
+      ttl: 720h  # 30日保持
+      includedNamespaces:
+        - minecraft-debug
+        - monitoring
+        - argocd
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi

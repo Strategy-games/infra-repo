@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: minecraft-debug-env
+  namespace: minecraft-debug
+data:
+  # itzg/minecraft-server 環境変数
+  # ref: https://docker-minecraft-server.readthedocs.io/
+
+  EULA: "TRUE"
+  TYPE: "PAPER"           # Folia はプラグイン互換性未確認のため debug は Paper を使用
+  VERSION: "LATEST"       # 最新安定版を自動取得
+
+  # メモリ設定 (JVM heap)
+  MEMORY: "4G"
+  INIT_MEMORY: "2G"
+  MAX_MEMORY: "6G"
+
+  # サーバー設定
+  MOTD: "§b[DEBUG] §fStrategy Games 検証サーバー"
+  MAX_PLAYERS: "10"
+  DIFFICULTY: "normal"
+  ONLINE_MODE: "FALSE"    # 検証環境のためオフラインモード
+  ALLOW_NETHER: "TRUE"
+  GENERATE_STRUCTURES: "TRUE"
+  LEVEL_NAME: "debug-world"
+  VIEW_DISTANCE: "8"      # 本番より低めに設定してリソース節約
+  SIMULATION_DISTANCE: "6"
+
+  # RCON (リモート管理)
+  RCON_ENABLED: "TRUE"
+  RCON_PORT: "25575"
+
+  # JVM チューニング (Aikar's flags - Paper 推奨)
+  JVM_XX_OPTS: >-
+    -XX:+UseG1GC
+    -XX:+ParallelRefProcEnabled
+    -XX:MaxGCPauseMillis=200
+    -XX:+UnlockExperimentalVMOptions
+    -XX:+DisableExplicitGC
+    -XX:+AlwaysPreTouch
+    -XX:G1NewSizePercent=30
+    -XX:G1MaxNewSizePercent=40
+    -XX:G1HeapRegionSize=8M
+    -XX:G1ReservePercent=20
+    -XX:G1HeapWastePercent=5
+    -XX:G1MixedGCCountTarget=4
+    -XX:InitiatingHeapOccupancyPercent=15
+    -XX:G1MixedGCLiveThresholdPercent=90
+    -XX:G1RSetUpdatingPauseTimePercent=5
+    -XX:SurvivorRatio=32
+    -XX:+PerfDisableSharedMem
+    -XX:MaxTenuringThreshold=1
+
+  # デバッグ用追加設定
+  ENABLE_WHITELIST: "TRUE"  # デバッグプレイヤーのみ接続許可
+  ENFORCE_WHITELIST: "TRUE"
+  SPAWN_PROTECTION: "0"
+
+  # Paper 固有設定 (paper.yml 上書き)
+  PAPER_CHANNEL: "experimental"  # 最新 experimental ビルドを使用

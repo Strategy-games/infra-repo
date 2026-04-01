@@ -1,0 +1,46 @@
+# Mattermost Helm values
+# ref: https://helm.mattermost.com
+
+# 本番と同じインスタンスを使用 (debug 用の別チャンネルで運用)
+# debug 専用デプロイが必要な場合はこのファイルを有効化
+
+replicaCount: 1
+
+image:
+  repository: mattermost/mattermost-team-edition
+  tag: latest
+  pullPolicy: Always
+
+service:
+  type: ClusterIP
+  port: 8065
+
+ingress:
+  enabled: false  # Cloudflare Tunnel 経由
+
+persistence:
+  data:
+    enabled: true
+    storageClass: synology-csi
+    size: 20Gi
+  plugins:
+    enabled: true
+    storageClass: synology-csi
+    size: 5Gi
+
+database:
+  # 外部 MariaDB を使用 (mariadb.minecraft-debug.svc.cluster.local)
+  # 接続文字列は Secret 経由で注入
+  type: mysql
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+  limits:
+    cpu: 1000m
+    memory: 2Gi
+
+mattermostEnvs:
+  MM_SERVICESETTINGS_SITEURL: "https://matter.strategy-admins.uk"
+  MM_SERVICESETTINGS_ENABLEDEVELOPER: "true"  # debug 環境

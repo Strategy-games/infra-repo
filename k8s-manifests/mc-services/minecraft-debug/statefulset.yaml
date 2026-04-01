@@ -1,0 +1,118 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: minecraft-debug
+  namespace: minecraft-debug
+  labels:
+    app: minecraft-debug
+    environment: debug
+spec:
+  serviceName: minecraft-debug-headless
+  replicas: 1
+  selector:
+    matchLabels:
+      app: minecraft-debug
+  template:
+    metadata:
+      labels:
+        app: minecraft-debug
+        environment: debug
+    spec:
+      # Ryzen 7 5700X ノードに優先配置 (高シングルスレッド性能)
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - k8s-wk-1  # sv01 (i9) の Worker ノード
+      securityContext:
+        fsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: minecraft
+          image: itzg/minecraft-server:java21
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 25565
+              name: mc
+              protocol: TCP
+            - containerPort: 25575
+              name: rcon
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: minecraft-debug-env
+          env:
+            - name: RCON_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: minecraft-debug-secrets
+                  key: rcon-password
+          resources:
+            requests:
+              cpu: "2000m"
+              memory: "5Gi"
+            limits:
+              cpu: "4000m"
+              memory: "8Gi"
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: plugins
+              mountPath: /data/plugins
+          readinessProbe:
+            exec:
+              command:
+                - mc-monitor
+                - status
+                - --host=localhost
+                - --port=25565
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            failureThreshold: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            exec:
+              command:
+                - mc-monitor
+                - status
+                - --host=localhost
+                - --port=25565
+            initialDelaySeconds: 120
+            periodSeconds: 30
+            failureThreshold: 5
+            timeoutSeconds: 5
+      # カスタムプラグイン JAR を PVC からマウント
+      # plugins PVC に JAR を配置することで ArgoCD 外からもプラグイン更新可能
+      volumes:
+        - name: plugins
+          persistentVolumeClaim:
+            claimName: minecraft-debug-plugins
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: synology-csi
+        resources:
+          requests:
+            storage: 30Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: minecraft-debug-plugins
+  namespace: minecraft-debug
+  annotations:
+    description: "カスタムプラグイン JAR 格納用 PVC (TechTree, MegaEng, ICBM, Decision等)"
+spec:
+  accessModes: ["ReadWriteMany"]
+  storageClassName: synology-csi
+  resources:
+    requests:
+      storage: 5Gi

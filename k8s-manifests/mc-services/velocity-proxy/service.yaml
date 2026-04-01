@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: velocity-proxy
+  namespace: minecraft-debug
+  labels:
+    app: velocity-proxy
+  annotations:
+    metallb.universe.tf/address-pool: mc-debug-pool
+    metallb.universe.tf/loadBalancerIPs: "192.168.10.231"
+spec:
+  type: LoadBalancer
+  selector:
+    app: velocity-proxy
+  ports:
+    - name: proxy
+      port: 25565      # プレイヤーは 25565 に接続
+      targetPort: 25577
+      protocol: TCP

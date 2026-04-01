@@ -1,0 +1,57 @@
+# Grafana Helm values
+# ref: https://github.com/grafana/helm-charts
+
+adminUser: admin
+# adminPassword: Terraform Cloud 変数 / kubectl secret で注入
+
+service:
+  type: LoadBalancer
+  loadBalancerIP: "192.168.10.203"
+  annotations:
+    metallb.universe.tf/address-pool: admin-pool
+
+persistence:
+  enabled: true
+  storageClassName: synology-csi
+  size: 10Gi
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+grafana.ini:
+  server:
+    domain: grafana.strategy-games.net
+    root_url: https://grafana.strategy-games.net
+  auth:
+    disable_login_form: false
+  # Cloudflare Access が認証レイヤーになるため外部 OAuth は省略可
+
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        url: http://kube-prometheus-stack-prometheus.monitoring:9090
+        isDefault: true
+      - name: Loki
+        type: loki
+        url: http://loki.monitoring:3100
+
+dashboardProviders:
+  dashboardproviders.yaml:
+    apiVersion: 1
+    providers:
+      - name: default
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/default

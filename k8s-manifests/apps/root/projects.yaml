@@ -1,0 +1,93 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: cluster-wide-apps
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: クラスター全体インフラコンポーネント
+  sourceRepos:
+    - https://github.com/Strategy-games/infra-repo
+    - https://helm.cilium.io
+    - https://metallb.github.io/metallb
+    - https://prometheus-community.github.io/helm-charts
+    - https://grafana.github.io/helm-charts
+    - https://charts.jetstack.io
+    - https://vmware-tanzu.github.io/helm-charts
+    - https://charts.synology.com
+  destinations:
+    - namespace: kube-system
+      server: https://kubernetes.default.svc
+    - namespace: monitoring
+      server: https://kubernetes.default.svc
+    - namespace: cert-manager
+      server: https://kubernetes.default.svc
+    - namespace: metallb-system
+      server: https://kubernetes.default.svc
+    - namespace: velero
+      server: https://kubernetes.default.svc
+    - namespace: synology-csi
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  roles:
+    - name: infra-admin
+      description: インフラチーム
+      policies:
+        - p, proj:cluster-wide-apps:infra-admin, applications, *, cluster-wide-apps/*, allow
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: mc-services
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: Minecraft 関連サービス
+  sourceRepos:
+    - https://github.com/Strategy-games/infra-repo
+  destinations:
+    - namespace: minecraft
+      server: https://kubernetes.default.svc
+    - namespace: minecraft-debug
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: ''
+      kind: Namespace
+    - group: ''
+      kind: PersistentVolume
+  roles:
+    - name: mc-admin
+      description: MC運営チーム
+      policies:
+        - p, proj:mc-services:mc-admin, applications, *, mc-services/*, allow
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: web-services
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: Web サービス群
+  sourceRepos:
+    - https://github.com/Strategy-games/infra-repo
+    - https://helm.mattermost.com
+    - https://charts.pelican.io
+  destinations:
+    - namespace: mattermost
+      server: https://kubernetes.default.svc
+    - namespace: pelican
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: ''
+      kind: Namespace
+  roles:
+    - name: web-admin
+      description: Web担当
+      policies:
+        - p, proj:web-services:web-admin, applications, *, web-services/*, allow

@@ -1,0 +1,44 @@
+# kube-prometheus-stack Helm values
+# ref: https://github.com/prometheus-community/helm-charts
+
+prometheus:
+  prometheusSpec:
+    retention: 30d
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: synology-csi
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 50Gi
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 2000m
+        memory: 4Gi
+    # Discord アラート用 Alertmanager 設定は alertmanager.yaml で別途管理
+
+alertmanager:
+  alertmanagerSpec:
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: synology-csi
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 5Gi
+
+# Node Exporter (各ノードのホストメトリクス)
+nodeExporter:
+  enabled: true
+
+# SNMP Exporter はスイッチ・NAS 監視用に別途デプロイ
+kubeStateMetrics:
+  enabled: true
+
+grafana:
+  enabled: false  # grafana/ ディレクトリで独立管理

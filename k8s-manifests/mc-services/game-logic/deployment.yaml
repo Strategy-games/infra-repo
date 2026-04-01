@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: game-logic-api
+  namespace: minecraft-debug
+  labels:
+    app: game-logic-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: game-logic-api
+  template:
+    metadata:
+      labels:
+        app: game-logic-api
+    spec:
+      containers:
+        - name: game-logic-api
+          # カスタムゲームロジック API サーバー
+          # テクノロジーツリー / メガエンジニアリング / ICBM / ディシジョン の API エンドポイントを提供
+          # image: ghcr.io/strategy-games/game-logic-api:debug  # ビルド後に更新
+          image: eclipse-temurin:21-jre
+          command: ["java", "-jar", "/app/game-logic-api.jar"]
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "debug"
+            - name: DB_HOST
+              value: "mariadb.minecraft-debug.svc.cluster.local"
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_NAME
+              value: "strategy_games_debug"
+            - name: DB_USER
+              value: "sgames"
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mariadb-secrets
+                  key: user-password
+            - name: MC_RCON_HOST
+              value: "minecraft-debug-headless.minecraft-debug.svc.cluster.local"
+            - name: MC_RCON_PORT
+              value: "25575"
+            - name: MC_RCON_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: minecraft-debug-secrets
+                  key: rcon-password
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+          volumeMounts:
+            - name: app-jar
+              mountPath: /app
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 15
+      volumes:
+        - name: app-jar
+          persistentVolumeClaim:
+            claimName: game-logic-api-jar
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: game-logic-api-jar
+  namespace: minecraft-debug
+  annotations:
+    description: "ゲームロジック API JAR ファイル格納 PVC (CI/CD で自動更新)"
+spec:
+  accessModes: ["ReadWriteMany"]
+  storageClassName: synology-csi
+  resources:
+    requests:
+      storage: 1Gi

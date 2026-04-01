@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bluemap
+  namespace: minecraft-debug
+  labels:
+    app: bluemap
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bluemap
+  template:
+    metadata:
+      labels:
+        app: bluemap
+    spec:
+      containers:
+        - name: bluemap
+          # BlueMap CLI - ワールドデータをレンダリングして Web サーバーで配信
+          image: ghcr.io/bluemap-minecraft/bluemap:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8100
+              name: web
+          env:
+            - name: JAVA_OPTS
+              value: "-Xmx2g -Xms512m"
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "2000m"
+              memory: "3Gi"
+          volumeMounts:
+            - name: world-data
+              mountPath: /world
+              readOnly: true
+            - name: render-output
+              mountPath: /app/web
+      # ワールドデータは MC サーバーの PVC を ReadOnly でマウント
+      # NOTE: 本番は rsync で別ノードにコピーしてレンダリング (CPU 負荷分離)
+      # debug 環境では同一 PVC を共有して簡略化
+      volumes:
+        - name: world-data
+          persistentVolumeClaim:
+            claimName: minecraft-debug-data-minecraft-debug-0
+            readOnly: true
+        - name: render-output
+          persistentVolumeClaim:
+            claimName: bluemap-render-output
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: bluemap-render-output
+  namespace: minecraft-debug
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: synology-csi
+  resources:
+    requests:
+      storage: 50Gi

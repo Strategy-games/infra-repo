@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: velocity-proxy
+  namespace: minecraft-debug
+  labels:
+    app: velocity-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: velocity-proxy
+  template:
+    metadata:
+      labels:
+        app: velocity-proxy
+    spec:
+      containers:
+        - name: velocity
+          # itzg/bungeecord は TYPE=VELOCITY で Velocity Proxy として動作
+          image: itzg/bungeecord:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 25577
+              name: proxy
+              protocol: TCP
+          env:
+            - name: TYPE
+              value: "VELOCITY"
+            - name: MEMORY
+              value: "1G"
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "1000m"
+              memory: "2Gi"
+          volumeMounts:
+            - name: velocity-config
+              mountPath: /config
+          readinessProbe:
+            tcpSocket:
+              port: 25577
+            initialDelaySeconds: 20
+            periodSeconds: 10
+      volumes:
+        - name: velocity-config
+          configMap:
+            name: velocity-proxy-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: velocity-proxy-config
+  namespace: minecraft-debug
+data:
+  velocity.toml: |
+    config-version = "2.7"
+    bind = "0.0.0.0:25577"
+    motd = "<blue>[DEBUG]</blue> Strategy Games 検証プロキシ"
+    show-max-players = 10
+    online-mode = false
+    force-key-authentication = false
+    player-info-forwarding-mode = "modern"
+    announce-forge = false
+    kick-existing-players = false
+
+    [servers]
+    debug = "minecraft-debug-headless.minecraft-debug:25565"
+    try = ["debug"]
+
+    [forced-hosts]
+
+    [advanced]
+    compression-threshold = 256
+    compression-level = -1
+    login-ratelimit = 3000
+    connection-timeout = 5000
+    read-timeout = 30000
+    haproxy-protocol = false
+    tcp-fast-open = false
+    bungee-plugin-message-channel = true
+    show-ping-requests = false
+    failover-on-unexpected-server-disconnect = true
+    announce-proxy-commands = true
+    log-command-executions = false
+    log-player-connections = true
+    accepts-transfers = false
+
+    [query]
+    enabled = false

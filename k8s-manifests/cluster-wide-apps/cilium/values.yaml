@@ -1,0 +1,48 @@
+# Cilium CNI - kube-proxy 完全置換モード
+# ref: https://docs.cilium.io/en/stable/network/kubernetes/kubeproxy-free/
+
+kubeProxyReplacement: true
+k8sServiceHost: 192.168.10.100  # HAProxy + Keepalived VIP
+k8sServicePort: 8443
+
+ipam:
+  mode: kubernetes
+
+# Pod CIDR: 10.244.0.0/16
+# (kubeadm --pod-network-cidr で指定した値と一致させること)
+
+hostServices:
+  enabled: true
+
+externalIPs:
+  enabled: true
+
+nodePort:
+  enabled: true
+
+# Hubble オブザーバビリティ
+hubble:
+  enabled: true
+  relay:
+    enabled: true
+  ui:
+    enabled: true
+    service:
+      type: ClusterIP
+
+operator:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi

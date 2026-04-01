@@ -1,0 +1,16 @@
+# Synology CSI Driver Helm values
+# ref: https://github.com/SynologyOpenSource/synology-csi
+
+clientInfoSecret: synology-csi-client-info
+
+storageClasses:
+  - name: synology-csi
+    isDefault: true
+    reclaimPolicy: Retain
+    volumeBindingMode: Immediate
+    fsType: ext4
+    dsm: 192.168.11.10  # Synology NAS (VLAN 11 ストレージ側)
+    location: /volume1/k8s-pv
+
+snapshotter:
+  enabled: true

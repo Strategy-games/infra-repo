@@ -1,0 +1,93 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: cluster-wide-apps
+  namespace: argocd
+spec:
+  generators:
+    - git:
+        repoURL: https://github.com/Strategy-games/infra-repo
+        revision: debug
+        directories:
+          - path: k8s-manifests/cluster-wide-apps/*
+  template:
+    metadata:
+      name: '{{path.basename}}'
+    spec:
+      project: cluster-wide-apps
+      source:
+        repoURL: https://github.com/Strategy-games/infra-repo
+        targetRevision: debug
+        path: '{{path}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{path.basename}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: mc-services
+  namespace: argocd
+spec:
+  generators:
+    - git:
+        repoURL: https://github.com/Strategy-games/infra-repo
+        revision: debug
+        directories:
+          - path: k8s-manifests/mc-services/*
+  template:
+    metadata:
+      name: 'mc-{{path.basename}}'
+    spec:
+      project: mc-services
+      source:
+        repoURL: https://github.com/Strategy-games/infra-repo
+        targetRevision: debug
+        path: '{{path}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: minecraft-debug
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: web-services
+  namespace: argocd
+spec:
+  generators:
+    - git:
+        repoURL: https://github.com/Strategy-games/infra-repo
+        revision: debug
+        directories:
+          - path: k8s-manifests/web-services/*
+  template:
+    metadata:
+      name: 'web-{{path.basename}}'
+    spec:
+      project: web-services
+      source:
+        repoURL: https://github.com/Strategy-games/infra-repo
+        targetRevision: debug
+        path: '{{path}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{path.basename}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

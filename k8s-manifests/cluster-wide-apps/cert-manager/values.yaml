@@ -1,0 +1,14 @@
+# cert-manager Helm values
+# Cloudflare DNS-01 チャレンジで Let's Encrypt ワイルドカード証明書を取得
+
+installCRDs: true
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+# ClusterIssuer は別途 cluster-issuer.yaml で定義 (Cloudflare API token 参照)
