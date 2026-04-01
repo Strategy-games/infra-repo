@@ -23,6 +23,10 @@
 
 ## Step 1: Proxmox VM テンプレート作成
 
+> `virt-customize` は使わない。
+> Proxmox の **cloud-init snippet** で初回起動時に `qemu-guest-agent` をインストールする方式を使う。
+> (Proxmox VE 9.x / Debian Trixie ホストで動作確認済み)
+
 **pve01 で実行 (SSH ログイン後)**
 
 ```bash
@@ -30,11 +34,23 @@
 wget https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-genericcloud-amd64.qcow2 \
   -O /var/lib/vz/template/iso/debian-12-genericcloud-amd64.qcow2
 
-# qemu-guest-agent を注入
-apt install -y libguestfs-tools
-virt-customize -a /var/lib/vz/template/iso/debian-12-genericcloud-amd64.qcow2 \
-  --install qemu-guest-agent \
-  --run-command 'systemctl enable qemu-guest-agent'
+# local ストレージに snippets コンテンツを有効化
+pvesm set local --content vztmpl,iso,backup,snippets
+
+# cloud-init vendor snippet 作成
+# 初回起動時に qemu-guest-agent + k8s 事前依存パッケージをインストール
+mkdir -p /var/lib/vz/snippets
+cat > /var/lib/vz/snippets/k8s-node-init.yaml <<'EOF'
+#cloud-config
+packages:
+  - qemu-guest-agent
+  - curl
+  - gnupg
+  - apt-transport-https
+  - ca-certificates
+runcmd:
+  - systemctl enable qemu-guest-agent --now
+EOF
 
 # VM テンプレート作成 (VMID: 9050)
 qm create 9050 \
@@ -47,6 +63,9 @@ qm create 9050 \
   --boot c --bootdisk scsi0 \
   --agent 1 \
   --serial0 socket --vga serial0
+
+# cloud-init vendor snippet をアタッチ
+qm set 9050 --cicustom "vendor=local:snippets/k8s-node-init.yaml"
 
 # ディスクを 32GB に拡張
 qm resize 9050 scsi0 32G
