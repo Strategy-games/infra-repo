@@ -26,23 +26,23 @@
 **pve01 で実行 (SSH ログイン後)**
 
 ```bash
-# Ubuntu 24.04 cloud-init イメージ取得
-wget https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img \
-  -O /var/lib/vz/template/iso/ubuntu-24.04-cloudimg.img
+# Debian 12 (Bookworm) genericcloud イメージ取得
+wget https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-genericcloud-amd64.qcow2 \
+  -O /var/lib/vz/template/iso/debian-12-genericcloud-amd64.qcow2
 
 # qemu-guest-agent を注入
 apt install -y libguestfs-tools
-virt-customize -a /var/lib/vz/template/iso/ubuntu-24.04-cloudimg.img \
+virt-customize -a /var/lib/vz/template/iso/debian-12-genericcloud-amd64.qcow2 \
   --install qemu-guest-agent \
   --run-command 'systemctl enable qemu-guest-agent'
 
 # VM テンプレート作成 (VMID: 9050)
 qm create 9050 \
-  --name ubuntu-k8s-template \
+  --name debian-12-k8s-template \
   --memory 4096 --cores 2 \
   --net0 virtio,bridge=vmbr0,tag=10 \
   --scsihw virtio-scsi-pci \
-  --scsi0 local-lvm:0,import-from=/var/lib/vz/template/iso/ubuntu-24.04-cloudimg.img \
+  --scsi0 local-lvm:0,import-from=/var/lib/vz/template/iso/debian-12-genericcloud-amd64.qcow2 \
   --ide2 local-lvm:cloudinit \
   --boot c --bootdisk scsi0 \
   --agent 1 \
@@ -73,7 +73,7 @@ qm set 201 \
   --ipconfig0 ip=192.168.10.141/24,gw=192.168.10.1 \
   --nameserver 192.168.10.1 \
   --sshkeys ~/.ssh/authorized_keys \
-  --ciuser ubuntu
+  --ciuser debian
 qm resize 201 scsi0 40G
 qm start 201
 
@@ -84,7 +84,7 @@ qm set 211 \
   --ipconfig0 ip=192.168.10.151/24,gw=192.168.10.1 \
   --nameserver 192.168.10.1 \
   --sshkeys ~/.ssh/authorized_keys \
-  --ciuser ubuntu
+  --ciuser debian
 qm resize 211 scsi0 60G
 qm start 211
 ```
@@ -101,7 +101,7 @@ qm set 212 \
   --ipconfig0 ip=192.168.10.152/24,gw=192.168.10.1 \
   --nameserver 192.168.10.1 \
   --sshkeys ~/.ssh/authorized_keys \
-  --ciuser ubuntu
+  --ciuser debian
 qm resize 212 scsi0 60G
 qm start 212
 ```
@@ -121,7 +121,7 @@ qm start 212
 
 ```bash
 # SSH ログイン (例: CP)
-ssh ubuntu@192.168.10.141
+ssh debian@192.168.10.141
 
 # --- swap 無効化 ---
 sudo swapoff -a
@@ -148,10 +148,10 @@ sudo apt-get update
 sudo apt-get install -y ca-certificates curl gnupg
 
 sudo install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
+curl -fsSL https://download.docker.com/linux/debian/gpg \
   | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
-  https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" \
+  https://download.docker.com/linux/debian $(. /etc/os-release && echo $VERSION_CODENAME) stable" \
   | sudo tee /etc/apt/sources.list.d/docker.list
 
 sudo apt-get update
@@ -182,7 +182,7 @@ sudo systemctl enable kubelet
 
 ```bash
 # CP ノードで実行 (192.168.10.141)
-ssh ubuntu@192.168.10.141
+ssh debian@192.168.10.141
 
 # kubeadm init
 # --skip-phases=addon/kube-proxy : Cilium が kube-proxy を置換するためスキップ
@@ -211,7 +211,7 @@ cat /tmp/join-command.sh
 JOIN_CMD=$(cat /tmp/join-command.sh)
 
 for NODE in 192.168.10.151 192.168.10.152; do
-  ssh ubuntu@$NODE "sudo $JOIN_CMD"
+  ssh debian@$NODE "sudo $JOIN_CMD"
 done
 
 # CP でノード確認 (NotReady は CNI 未インストールのため正常)
