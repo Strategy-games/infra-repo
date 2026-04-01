@@ -267,10 +267,41 @@ cat /tmp/join-command.sh
 **CP ノード (`k8s-debug-cp` / 192.168.10.141) で実行**
 
 ```bash
-# CP から Worker へ SSH 鍵認証が通るか確認 (まだの場合は鍵を配布)
-ssh-keygen -t ed25519 -N "" -f ~/.ssh/id_ed25519   # 鍵がなければ生成
-ssh-copy-id debian@192.168.10.151
-ssh-copy-id debian@192.168.10.152
+# 鍵生成
+ssh-keygen -t ed25519 -N "" -f ~/.ssh/id_ed25519
+
+# CP の公開鍵を確認してコピーしておく
+cat ~/.ssh/id_ed25519.pub
+```
+
+Debian cloud image はパスワード認証が無効なため `ssh-copy-id` は失敗する。
+**pve01 で** `qm guest exec` を使って Worker に鍵を注入する:
+
+```bash
+# pve01 で実行 (PUBKEY を上記 cat の出力に置き換える)
+PUBKEY="ssh-ed25519 AAAA...CP の公開鍵..."
+
+qm guest exec 211 -- bash -c "
+  mkdir -p /home/debian/.ssh &&
+  echo '$PUBKEY' >> /home/debian/.ssh/authorized_keys &&
+  chown -R debian:debian /home/debian/.ssh &&
+  chmod 700 /home/debian/.ssh &&
+  chmod 600 /home/debian/.ssh/authorized_keys"
+
+# pve03 で実行
+qm guest exec 212 -- bash -c "
+  mkdir -p /home/debian/.ssh &&
+  echo '$PUBKEY' >> /home/debian/.ssh/authorized_keys &&
+  chown -R debian:debian /home/debian/.ssh &&
+  chmod 700 /home/debian/.ssh &&
+  chmod 600 /home/debian/.ssh/authorized_keys"
+```
+
+CP に戻って疎通確認:
+
+```bash
+ssh debian@192.168.10.151 hostname   # k8s-debug-wk-1 が返れば OK
+ssh debian@192.168.10.152 hostname   # k8s-debug-wk-2 が返れば OK
 
 # CP から各 Worker に join コマンドを流す
 JOIN_CMD=$(cat /tmp/join-command.sh)
