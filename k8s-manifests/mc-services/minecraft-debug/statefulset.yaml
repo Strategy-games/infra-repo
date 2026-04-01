@@ -18,7 +18,7 @@ spec:
         app: minecraft-debug
         environment: debug
     spec:
-      # Ryzen 7 5700X ノードに優先配置 (高シングルスレッド性能)
+      # pve03 (Ryzen 7 5700X) の Worker に優先配置 (高シングルスレッド性能 → MC に最適)
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -28,7 +28,7 @@ spec:
                   - key: kubernetes.io/hostname
                     operator: In
                     values:
-                      - k8s-wk-1  # sv01 (i9) の Worker ノード
+                      - k8s-debug-wk-2  # pve03 (Ryzen 7 5700X)
       securityContext:
         fsGroup: 1000
         runAsNonRoot: true

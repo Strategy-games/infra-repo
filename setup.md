@@ -7,8 +7,9 @@
 
 | 項目 | 内容 |
 |---|---|
-| pve01 | Ryzen 7 5700X / 78GB RAM / Proxmox VE 9.1.4 |
-| pve02 | i7-8700 / 94GB RAM / Proxmox VE 9.1.4 |
+| pve01 | i7-8700 (6C/12T) / 94GB RAM / Proxmox VE 9.1.4 |
+| pve02 | Intel Celeron / Proxmox VE 9.1.4 |
+| pve03 | Ryzen 7 5700X (8C/16T) / 78GB RAM / Proxmox VE 9.1.4 |
 | NAS | Synology DSM (VLAN11 側に接続済み) |
 | 手元 PC | `kubectl` / `helm` / `terraform` / `git` インストール済み |
 
@@ -58,11 +59,13 @@ qm template 9050
 
 ## Step 2: k8s VM 展開
 
-> Control Plane x1 (pve01) + Worker x2 (pve01/pve02) の 3 ノード構成
+> Control Plane x1 (pve01) + Worker x2 (pve01/pve03) の 3 ノード構成
+> pve02 (Celeron) は k8s クラスタ外で Pelican 等の軽量サービスに使用
 
-### 2-1. pve01: CP と Worker-1 を作成
+### 2-1. pve01 (i7-8700): CP と Worker-1 を作成
 
 ```bash
+# pve01 で実行
 # --- Control Plane ---
 qm clone 9050 201 --name k8s-debug-cp --full
 qm set 201 \
@@ -74,10 +77,10 @@ qm set 201 \
 qm resize 201 scsi0 40G
 qm start 201
 
-# --- Worker 1 ---
+# --- Worker 1 (サブ Worker) ---
 qm clone 9050 211 --name k8s-debug-wk-1 --full
 qm set 211 \
-  --memory 24576 --cores 6 \
+  --memory 16384 --cores 4 \
   --ipconfig0 ip=192.168.10.151/24,gw=192.168.10.1 \
   --nameserver 192.168.10.1 \
   --sshkeys ~/.ssh/authorized_keys \
@@ -86,13 +89,15 @@ qm resize 211 scsi0 60G
 qm start 211
 ```
 
-### 2-2. pve02: Worker-2 を作成
+### 2-2. pve03 (Ryzen 7 5700X): Worker-2 を作成
 
 ```bash
-# pve02 で実行
+# pve03 で実行
+# MC サーバーが優先配置されるメイン Worker
+# Ryzen 7 5700X は高シングルスレッド性能 → Paper に最適
 qm clone 9050 212 --name k8s-debug-wk-2 --full
 qm set 212 \
-  --memory 16384 --cores 4 \
+  --memory 24576 --cores 6 \
   --ipconfig0 ip=192.168.10.152/24,gw=192.168.10.1 \
   --nameserver 192.168.10.1 \
   --sshkeys ~/.ssh/authorized_keys \
@@ -102,11 +107,11 @@ qm start 212
 ```
 
 > **IP アドレス まとめ**
-> | ノード | IP | Proxmox ホスト |
-> |---|---|---|
-> | k8s-debug-cp | 192.168.10.141 | pve01 |
-> | k8s-debug-wk-1 | 192.168.10.151 | pve01 |
-> | k8s-debug-wk-2 | 192.168.10.152 | pve02 |
+> | ノード | IP | Proxmox ホスト | 役割 |
+> |---|---|---|---|
+> | k8s-debug-cp | 192.168.10.141 | pve01 (i7-8700) | Control Plane |
+> | k8s-debug-wk-1 | 192.168.10.151 | pve01 (i7-8700) | Worker サブ |
+> | k8s-debug-wk-2 | 192.168.10.152 | pve03 (Ryzen 7 5700X) | Worker メイン (MC担当) |
 
 ---
 

@@ -85,16 +85,20 @@ graph TB
 
 ```mermaid
 graph TB
-    subgraph "pve01 (Ryzen 7 5700X / 78GB)"
+    subgraph "pve01 (i7-8700 / 94GB)"
         pve01_pve["Proxmox VE 9.1.4"]
         cp1["k8s-debug-cp\n2vCPU / 4GB\nControl Plane"]
-        wk1["k8s-debug-wk-1\n6vCPU / 24GB\nWorker (メイン)"]
+        wk1["k8s-debug-wk-1\n4vCPU / 16GB\nWorker (サブ)"]
     end
 
-    subgraph "pve02 (i7-8700 / 94GB)"
+    subgraph "pve02 (Celeron)"
         pve02_pve["Proxmox VE 9.1.4"]
-        wk2["k8s-debug-wk-2\n4vCPU / 16GB\nWorker (サブ)"]
-        cel["Celeron サーバー\n軽量サービス / Pelican"]
+        cel["軽量サービス / Pelican\n(k8s クラスタ外)"]
+    end
+
+    subgraph "pve03 (Ryzen 7 5700X / 78GB)"
+        pve03_pve["Proxmox VE 9.1.4"]
+        wk2["k8s-debug-wk-2\n6vCPU / 24GB\nWorker (メイン・MC担当)"]
     end
 
     subgraph "k8s debug クラスタ"
@@ -105,8 +109,9 @@ graph TB
     cp1 --> CP
     wk1 & wk2 --> WK
 
-    style pve01_pve fill:#2d5a27,stroke:#4CAF50,color:#fff
-    style pve02_pve fill:#1a4a7a,stroke:#2196F3,color:#fff
+    style pve01_pve fill:#6a5a1a,stroke:#FFC107,color:#fff
+    style pve02_pve fill:#37474f,stroke:#607d8b,color:#fff
+    style pve03_pve fill:#2d5a27,stroke:#4CAF50,color:#fff
     style CP fill:#e65100,stroke:#ff6f00,color:#fff
     style WK fill:#1565c0,stroke:#0d47a1,color:#fff
     style cel fill:#37474f,stroke:#607d8b,color:#fff
