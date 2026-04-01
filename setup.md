@@ -26,8 +26,11 @@
 > `virt-customize` は使わない。
 > Proxmox の **cloud-init snippet** で初回起動時に `qemu-guest-agent` をインストールする方式を使う。
 > (Proxmox VE 9.x / Debian Trixie ホストで動作確認済み)
+>
+> **⚠️ テンプレートはローカルストレージに作成するため、VM をデプロイする各ノードで個別に実行が必要。**
+> Ceph 等の共有ストレージがある場合は pve01 で一度だけ作ればよい。
 
-**pve01 で実行 (SSH ログイン後)**
+**pve01・pve03 それぞれで実行 (SSH ログイン後)**
 
 ```bash
 # Debian 12 (Bookworm) genericcloud イメージ取得
