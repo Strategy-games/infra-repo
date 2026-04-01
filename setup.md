@@ -264,8 +264,15 @@ cat /tmp/join-command.sh
 
 ## Step 5: Worker ノード参加
 
+**CP ノード (`k8s-debug-cp` / 192.168.10.141) で実行**
+
 ```bash
-# join コマンドを wk-1 / wk-2 にコピーして実行
+# CP から Worker へ SSH 鍵認証が通るか確認 (まだの場合は鍵を配布)
+ssh-keygen -t ed25519 -N "" -f ~/.ssh/id_ed25519   # 鍵がなければ生成
+ssh-copy-id debian@192.168.10.151
+ssh-copy-id debian@192.168.10.152
+
+# CP から各 Worker に join コマンドを流す
 JOIN_CMD=$(cat /tmp/join-command.sh)
 
 for NODE in 192.168.10.151 192.168.10.152; do
