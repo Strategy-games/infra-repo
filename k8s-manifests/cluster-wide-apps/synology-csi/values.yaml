@@ -9,7 +9,7 @@ storageClasses:
     reclaimPolicy: Retain
     volumeBindingMode: Immediate
     fsType: ext4
-    dsm: 192.168.11.10  # Synology NAS (VLAN 11 ストレージ側)
+    dsm: 192.168.10.50  # Synology NAS (検証環境 VLAN 10)
     location: /volume1/k8s-pv
 
 snapshotter:

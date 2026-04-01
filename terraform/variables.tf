@@ -47,7 +47,7 @@ variable "k8s_cluster_ca_certificate" {
 variable "synology_nas_ip" {
   description = "Synology NAS IP address"
   type        = string
-  default     = "192.168.11.10"
+  default     = "192.168.10.50"
 }
 
 variable "argocd_version" {

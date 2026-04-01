@@ -10,7 +10,7 @@ configuration:
       config:
         region: minio
         s3ForcePathStyle: "true"
-        s3Url: http://192.168.11.10:9000  # Synology の MinIO エンドポイント
+        s3Url: http://192.168.10.50:9000  # Synology の MinIO エンドポイント
         publicUrl: http://192.168.11.10:9000
 
   volumeSnapshotLocation:

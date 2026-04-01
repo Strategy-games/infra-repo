@@ -397,7 +397,7 @@ kubectl create secret generic synology-csi-client-info \
   --namespace synology-csi \
   --from-literal=client-info.yaml="$(cat <<EOF
 clients:
-  - host: 192.168.11.10       # NAS の IP (VLAN11 ストレージ側)
+  - host: 192.168.10.50       # NAS の IP (VLAN11 ストレージ側)
     port: 5000
     https: false
     username: <NAS管理者ユーザー>
@@ -569,7 +569,7 @@ kubectl describe pod <pod名> -n minecraft-debug
 kubectl logs -n synology-csi -l app=synology-csi-controller
 
 # NAS への疎通確認 (Worker ノードから)
-curl http://192.168.11.10:5000
+curl http://192.168.10.50:5000
 ```
 
 ### ArgoCD が Sync しない
