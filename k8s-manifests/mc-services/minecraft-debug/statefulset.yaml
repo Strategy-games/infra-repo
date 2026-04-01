@@ -35,7 +35,7 @@ spec:
         runAsUser: 1000
       containers:
         - name: minecraft
-          image: itzg/minecraft-server:java21
+          image: itzg/minecraft-server:java21-bookworm
           imagePullPolicy: Always
           ports:
             - containerPort: 25565

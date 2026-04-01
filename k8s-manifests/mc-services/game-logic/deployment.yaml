@@ -20,7 +20,7 @@ spec:
           # カスタムゲームロジック API サーバー
           # テクノロジーツリー / メガエンジニアリング / ICBM / ディシジョン の API エンドポイントを提供
           # image: ghcr.io/strategy-games/game-logic-api:debug  # ビルド後に更新
-          image: eclipse-temurin:21-jre
+          image: eclipse-temurin:21-jre-bookworm
           command: ["java", "-jar", "/app/game-logic-api.jar"]
           ports:
             - containerPort: 8080

@@ -18,7 +18,7 @@ spec:
       containers:
         - name: velocity
           # itzg/bungeecord は TYPE=VELOCITY で Velocity Proxy として動作
-          image: itzg/bungeecord:latest
+          image: itzg/bungeecord:java21-bookworm
           imagePullPolicy: Always
           ports:
             - containerPort: 25577

@@ -21,7 +21,7 @@ spec:
         runAsUser: 999
       containers:
         - name: mariadb
-          image: mariadb:11
+          image: mariadb:11-bookworm
           ports:
             - containerPort: 3306
               name: mysql
