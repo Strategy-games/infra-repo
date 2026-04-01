@@ -48,6 +48,7 @@ cat > /var/lib/vz/snippets/k8s-node-init.yaml <<'EOF'
 #cloud-config
 packages:
   - qemu-guest-agent
+  - git
   - curl
   - gnupg
   - apt-transport-https
@@ -87,6 +88,7 @@ cat > /var/lib/vz/snippets/k8s-node-init.yaml <<'EOF'
 #cloud-config
 packages:
   - qemu-guest-agent
+  - git
   - curl
   - gnupg
   - apt-transport-https
@@ -229,7 +231,7 @@ echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] \
   | sudo tee /etc/apt/sources.list.d/kubernetes.list
 
 sudo apt-get update
-sudo apt-get install -y kubelet kubeadm kubectl conntrack
+sudo apt-get install -y git kubelet kubeadm kubectl conntrack
 sudo apt-mark hold kubelet kubeadm kubectl
 sudo systemctl enable kubelet
 ```
