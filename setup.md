@@ -582,10 +582,10 @@ kubectl create secret generic mariadb-secrets \
 ## Step 12: ArgoCD 動作確認
 
 ```bash
-# ArgoCD CLI インストール
-curl -sSL -o /usr/local/bin/argocd \
+# ArgoCD CLI インストール (sudo 必要)
+sudo curl -sSL -o /usr/local/bin/argocd \
   https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
-chmod +x /usr/local/bin/argocd
+sudo chmod +x /usr/local/bin/argocd
 
 # ログイン (Terraform が作成した LoadBalancer IP)
 argocd login 192.168.10.202 --insecure --username admin \
