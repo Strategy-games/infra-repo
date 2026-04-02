@@ -477,10 +477,23 @@ kubectl config view --raw --minify \
 | `K8S_CA_CERT` | certificate-authority-data (base64) |
 | `DISCORD_WEBHOOK_URL` | Discord Webhook URL |
 
-### 10-3. Terraform 実行
+### 10-3. Terraform インストール (CP ノード)
 
 ```bash
-cd terraform
+# Terraform が入っていない場合はインストール
+wget -O- https://apt.releases.hashicorp.com/gpg \
+  | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] \
+  https://apt.releases.hashicorp.com $(. /etc/os-release && echo $VERSION_CODENAME) main" \
+  | sudo tee /etc/apt/sources.list.d/hashicorp.list
+sudo apt-get update && sudo apt-get install -y terraform
+terraform version
+```
+
+### 10-4. Terraform 実行
+
+```bash
+cd ~/infra-repo/terraform
 
 # Terraform Cloud にログイン
 terraform login
