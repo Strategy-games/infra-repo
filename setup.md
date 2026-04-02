@@ -405,11 +405,10 @@ clients:
 EOF
 )"
 
-# CSI ドライバインストール
-helm repo add synology-csi https://charts.synology.com
-helm install synology-csi synology-csi/synology-csi \
-  --namespace synology-csi \
-  -f k8s-manifests/cluster-wide-apps/synology-csi/values.yaml
+# CSI ドライバインストール (公式リポジトリから直接適用)
+# ※ Synology CSI に公式 Helm リポジトリは存在しない
+git clone https://github.com/SynologyOpenSource/synology-csi.git /tmp/synology-csi
+kubectl apply -f /tmp/synology-csi/deploy/kubernetes/v1.20/
 
 # StorageClass 確認
 kubectl get storageclass
