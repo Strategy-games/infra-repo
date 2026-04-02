@@ -21,7 +21,7 @@ terraform {
   }
 
   cloud {
-    organization = "strategy-games"
+    organization = "Strategy-Game"
     workspaces {
       name = "infra-debug"
     }
