@@ -397,9 +397,9 @@ Synology DSM にログインして以下を確認:
 kubectl create namespace synology-csi
 
 # NAS の管理者ユーザー情報を入力
-kubectl create secret generic synology-csi-client-info \
+kubectl create secret generic client-info-secret \
   --namespace synology-csi \
-  --from-literal=client-info.yaml="$(cat <<EOF
+  --from-literal="client-info.yml=$(cat <<EOF
 clients:
   - host: 192.168.10.50       # NAS の IP (VLAN10 側)
     port: 5000

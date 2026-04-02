@@ -1,7 +1,7 @@
 # Synology CSI Driver Helm values
 # ref: https://github.com/SynologyOpenSource/synology-csi
 
-clientInfoSecret: synology-csi-client-info
+clientInfoSecret: client-info-secret
 
 storageClasses:
   - name: synology-csi
