@@ -587,12 +587,15 @@ sudo curl -sSL -o /usr/local/bin/argocd \
   https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
 sudo chmod +x /usr/local/bin/argocd
 
-# ログイン (Terraform が作成した LoadBalancer IP)
-argocd login 192.168.10.202 --insecure --username admin \
-  --password $(kubectl get secret argocd-initial-admin-secret \
-    -n argocd -o jsonpath='{.data.password}' | base64 -d)
+# 初期パスワードを取得してメモしておく
+ARGOCD_PASS=$(kubectl get secret argocd-initial-admin-secret \
+  -n argocd -o jsonpath='{.data.password}' | base64 -d)
+echo "Initial password: $ARGOCD_PASS"
 
-# パスワードを変更
+# ログイン (Terraform が作成した LoadBalancer IP)
+argocd login 192.168.10.202 --insecure --username admin --password "$ARGOCD_PASS"
+
+# パスワードを変更 (現在のパスワード: 上記 $ARGOCD_PASS の値)
 argocd account update-password
 
 # Root Application の sync 状態確認
