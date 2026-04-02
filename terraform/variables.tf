@@ -23,7 +23,7 @@ variable "github_token" {
 variable "k8s_host" {
   description = "Kubernetes API server endpoint"
   type        = string
-  default     = "https://192.168.10.100:8443"
+  default     = "https://192.168.10.141:6443"
 }
 
 variable "k8s_client_certificate" {
