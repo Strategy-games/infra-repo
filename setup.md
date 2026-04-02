@@ -490,12 +490,41 @@ sudo apt-get update && sudo apt-get install -y terraform
 terraform version
 ```
 
-### 10-4. Terraform 実行
+### 10-4. Terraform Cloud Workspace を Local 実行モードに変更
+
+Terraform Cloud はデフォルトでリモート実行するため、プライベート k8s クラスタに到達できない。
+ステート管理は TF Cloud で行いつつ、実行はローカルで行う **Local モード** に変更する。
+
+1. `infra-debug` ワークスペース → **Settings** → **General**
+2. **Execution Mode** → **Local** に変更
+3. **Save settings**
+
+### 10-5. 変数ファイル作成 (CP ノード)
+
+Local モードでは TF Cloud の Variables が自動で読み込まれないため、ローカルに変数ファイルを作成する。
+`terraform.tfvars` は `.gitignore` で除外済みのため **コミットしない**。
+
+```bash
+# 非センシティブな変数をファイルに記載
+cat > ~/infra-repo/terraform/terraform.tfvars <<'EOF'
+cloudflare_account_id = "ここにアカウントID"
+cloudflare_zone_id    = "ここにゾーンID"
+EOF
+
+# センシティブな変数は環境変数で渡す
+export TF_VAR_cloudflare_api_token="Cloudflare APIトークン"
+export TF_VAR_github_token="GitHub PAT"
+export TF_VAR_k8s_client_certificate="$(kubectl config view --raw --minify -o jsonpath='{.users[0].user.client-certificate-data}')"
+export TF_VAR_k8s_client_key="$(kubectl config view --raw --minify -o jsonpath='{.users[0].user.client-key-data}')"
+export TF_VAR_k8s_cluster_ca_certificate="$(kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.certificate-authority-data}')"
+```
+
+### 10-6. Terraform 実行
 
 ```bash
 cd ~/infra-repo/terraform
 
-# Terraform Cloud にログイン
+# Terraform Cloud にログイン (初回のみ)
 terraform login
 
 terraform init
