@@ -421,18 +421,21 @@ kubectl get storageclass
 ### 10-1. Terraform Cloud Workspace 設定
 
 1. [app.terraform.io](https://app.terraform.io) → `strategy-games` Organization を開く
-2. **New Workspace** → `infra-debug` を作成
-3. **Variables** タブで以下を **Sensitive** として登録:
+2. **New Workspace** → **CLI-Driven Workflow** を選択 → Workspace name: `infra-debug`
+3. **Variables** タブ → **Add variable** で以下を登録:
+   - Category は常に **Terraform variable** を選択
+   - **HCL チェックは不要** (すべて文字列)
+   - Sensitive 列に ✓ がある項目は **Sensitive にチェック**
 
-| Variable | 説明 |
-|---|---|
-| `cloudflare_api_token` | Cloudflare API Token (Zone:Edit, DNS:Edit, Access:Edit) |
-| `cloudflare_zone_id` | Cloudflare ゾーン ID |
-| `cloudflare_account_id` | Cloudflare アカウント ID |
-| `github_token` | GitHub PAT (repo + org:write) |
-| `k8s_client_certificate` | `base64 ~/.kube/config` の client-certificate-data |
-| `k8s_client_key` | `base64 ~/.kube/config` の client-key-data |
-| `k8s_cluster_ca_certificate` | `base64 ~/.kube/config` の certificate-authority-data |
+| Variable | Sensitive | 説明 |
+|---|---|---|
+| `cloudflare_api_token` | ✓ | Cloudflare API Token (Zone:Edit, DNS:Edit, Access:Edit) |
+| `cloudflare_zone_id` | - | Cloudflare ゾーン ID |
+| `cloudflare_account_id` | - | Cloudflare アカウント ID |
+| `github_token` | ✓ | GitHub PAT (repo + org:write) |
+| `k8s_client_certificate` | ✓ | kubeconfig の client-certificate-data (base64) |
+| `k8s_client_key` | ✓ | kubeconfig の client-key-data (base64) |
+| `k8s_cluster_ca_certificate` | ✓ | kubeconfig の certificate-authority-data (base64) |
 
 ```bash
 # kubeconfig から各値を取得するコマンド例
