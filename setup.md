@@ -378,6 +378,10 @@ kubectl apply -f k8s-manifests/cluster-wide-apps/metallb/l2-advertisement.yaml
 
 ## Step 9: Synology CSI セットアップ
 
+> Synology CSI のインストール自体は ArgoCD が GitOps で管理する
+> (`k8s-manifests/cluster-wide-apps/synology-csi/values.yaml`)。
+> ここでは ArgoCD が参照する **認証情報 Secret のみ** を手動作成する。
+
 ### 9-1. NAS 側設定
 
 Synology DSM にログインして以下を確認:
@@ -386,33 +390,34 @@ Synology DSM にログインして以下を確認:
 2. **コントロールパネル → ファイルサービス → NFS** を有効化
 3. NFS アクセスを k8s ノードの IP レンジ (`192.168.10.0/24`) に許可
 
-### 9-2. k8s 側設定
+### 9-2. k8s 側設定 (Secret のみ手動作成)
 
 ```bash
-# Synology CSI の認証情報 Secret を作成
-# NAS の管理者ユーザー情報を入力
+# Namespace は ArgoCD が作成するが、Secret 先行作成のため手動で作っておく
 kubectl create namespace synology-csi
 
+# NAS の管理者ユーザー情報を入力
 kubectl create secret generic synology-csi-client-info \
   --namespace synology-csi \
   --from-literal=client-info.yaml="$(cat <<EOF
 clients:
-  - host: 192.168.10.50       # NAS の IP (VLAN11 ストレージ側)
+  - host: 192.168.10.50       # NAS の IP (VLAN10 側)
     port: 5000
     https: false
     username: <NAS管理者ユーザー>
     password: <NAS管理者パスワード>
 EOF
 )"
-
-# CSI ドライバインストール (公式リポジトリから直接適用)
-# ※ Synology CSI に公式 Helm リポジトリは存在しない
-git clone https://github.com/SynologyOpenSource/synology-csi.git /tmp/synology-csi
-kubectl apply -f /tmp/synology-csi/deploy/kubernetes/v1.20/
-
-# StorageClass 確認
-kubectl get storageclass
 ```
+
+> ArgoCD の Terraform apply (Step 10) 完了後、root Application が自動的に
+> `synology-csi` Application を作成し、Helm でドライバをインストールする。
+>
+> ```bash
+> # インストール確認
+> kubectl get storageclass
+> # synology-csi (default) が表示されれば OK
+> ```
 
 ---
 
@@ -619,7 +624,6 @@ kubectl wait --for=condition=Ready pod/minecraft-debug-0 \
 kubectl logs -f minecraft-debug-0 -n minecraft-debug
 
 # --- RCON で動作確認 ---
-# kubectl exec で RCON 接続
 kubectl exec -it minecraft-debug-0 -n minecraft-debug -- \
   rcon-cli --host localhost --port 25575 \
   --password <RCONパスワード> list
@@ -633,6 +637,15 @@ kubectl get svc velocity-proxy -n minecraft-debug
 # --- ArgoCD で全 app が Synced / Healthy か確認 ---
 argocd app list
 ```
+
+> **初回デプロイ時に Degraded になることが想定されるアプリ:**
+>
+> | アプリ | 原因 | 解消条件 |
+> |---|---|---|
+> | `mc-velocity-proxy` | バックエンド MC 未起動 | `mc-minecraft-debug` が Healthy になれば自動回復 |
+> | `mc-mariadb` | DB 初期化中 | PVC プロビジョニング完了後に自動回復 |
+> | `mc-bluemap` | RWO PVC 別ノード問題 | `bluemap/deployment.yaml` に nodeAffinity 追加が必要 (下記参照) |
+> | `mc-game-logic` | JAR 未配置 | CI/CD でカスタムイメージをビルドするまで Degraded のまま |
 
 ---
 
@@ -674,6 +687,47 @@ argocd app sync mc-minecraft-debug --force
 ```bash
 # Token 期限切れの場合は再発行
 kubeadm token create --print-join-command
+```
+
+### mc-bluemap が Degraded のまま (RWO PVC 別ノード問題)
+
+`minecraft-debug-data-minecraft-debug-0` は `ReadWriteOnce` PVC のため、
+MC Pod と bluemap Pod が**異なるノード**にスケジュールされると mount 失敗する。
+
+**解決策**: `k8s-manifests/mc-services/bluemap/deployment.yaml` の `spec.template.spec` に
+MC StatefulSet と同じ nodeAffinity を追加して `k8s-debug-wk-2` に固定する:
+
+```yaml
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - k8s-debug-wk-2
+```
+
+### mc-game-logic が Degraded のまま (JAR 未配置)
+
+`deployment.yaml` の image は一時的に `eclipse-temurin:21-jre-bookworm` を使用中。
+`/app/game-logic-api.jar` が存在しないためコンテナがクラッシュする。
+
+**解決策 A** — カスタムイメージをビルドして使う (推奨):
+```bash
+# CI/CD で ghcr.io/strategy-games/game-logic-api:debug をビルド・push 後
+# deployment.yaml の image を差し替える
+```
+
+**解決策 B** — JAR を PVC に手動配置する:
+```bash
+# 一時 Pod を立てて PVC に JAR をコピー
+kubectl run jar-loader --image=busybox --rm -it \
+  --overrides='{"spec":{"volumes":[{"name":"jar","persistentVolumeClaim":{"claimName":"game-logic-api-jar"}}],"containers":[{"name":"jar-loader","image":"busybox","volumeMounts":[{"mountPath":"/app","name":"jar"}],"stdin":true,"tty":true}]}}' \
+  -- sh
+# Pod 内で /app/game-logic-api.jar を配置
 ```
 
 ---

@@ -321,22 +321,45 @@ gitGraph
 
 ## デプロイ状況 (debug ブランチ)
 
-| コンポーネント | 状態 | 備考 |
+> 最終更新: 2026-04-02 — `argocd app list` の実測値に基づく
+
+### インフラ基盤
+
+| コンポーネント | ArgoCD 状態 | 備考 |
 |---|---|---|
-| Proxmox VM (CP/WK) | ✅ 稼働中 | cloud-init snippet 方式 |
-| Cilium CNI | ✅ 稼働中 | kube-proxy 置換モード |
-| MetalLB | ✅ 稼働中 | L2 モード |
-| Synology NAS 疎通 | ✅ 確認済み | 192.168.10.50 |
-| Synology CSI | 🔧 設定中 | kubectl apply 方式 |
-| ArgoCD | ✅ Helm インストール済み | Terraform apply 完了 |
+| Proxmox VM (CP/WK) | — | cloud-init snippet 方式で稼働中 |
+| Cilium CNI | ✅ Synced / Healthy | kube-proxy 置換モード |
+| MetalLB | ✅ Synced / Healthy | L2 モード |
+| cert-manager | ✅ Synced / Healthy | |
+| Synology CSI | ✅ Synced / Healthy | ArgoCD (GitOps) 管理 |
+| Monitoring (Prometheus/Grafana) | ✅ Synced / Healthy | |
+| Velero | ✅ Synced / Healthy | |
+| ArgoCD | ✅ Terraform Helm インストール済み | |
 | Cloudflare DNS/Tunnel | ✅ 作成済み | Terraform apply 完了 |
 | GitHub チーム/ブランチ保護 | ✅ 設定済み | public リポジトリ必須 |
 | Cloudflare WAF Ruleset | ⏸️ スキップ | 有料プラン必要 |
-| MC サーバー | ⏳ ArgoCD sync 待ち | |
 
-### 既知の制約
+### MC サービス (minecraft-debug namespace)
+
+| コンポーネント | ArgoCD 状態 | 備考 |
+|---|---|---|
+| mc-minecraft-debug | ✅ Synced / ⏳ Progressing | Paper 起動中 (初回 JAR DL + ワールド生成) |
+| mc-mariadb | ✅ Synced / ⏳ Progressing | DB 初期化中 |
+| mc-velocity-proxy | ✅ Synced / ⚠️ Degraded | MC 起動完了で自動回復予定 |
+| mc-bluemap | ✅ Synced / ⚠️ Degraded | RWO PVC 別ノード問題 → nodeAffinity 要修正 |
+| mc-game-logic | ✅ Synced / ⚠️ Degraded | JAR 未配置 / カスタムイメージ未ビルド |
+
+### Web サービス
+
+| コンポーネント | ArgoCD 状態 | 備考 |
+|---|---|---|
+| web-mattermost | ✅ Synced / Healthy | |
+| web-pelican | ✅ Synced / Healthy | |
+
+### 既知の制約・未解決問題
 
 - **Cloudflare WAF Ruleset**: `http_request_firewall_custom` フェーズは Pro プラン以上が必要。`cloudflare_firewall.tf` はコメントアウト済み。
 - **GitHub ブランチ保護**: Free プランでは public リポジトリのみ有効。`visibility = "public"` に設定済み。
 - **Terraform Cloud 実行モード**: プライベートクラスタのため **Local モード** で実行。
-- **Synology CSI**: 公式 Helm リポジトリが存在しないため `kubectl apply` で直接インストール。
+- **mc-bluemap Degraded**: `minecraft-debug-data-minecraft-debug-0` は `ReadWriteOnce` PVC のため、MC Pod と異なるノードにスケジュールされると mount 失敗。`k8s-manifests/mc-services/bluemap/deployment.yaml` に MC と同じ `k8s-debug-wk-2` への `nodeAffinity` 追加が必要。
+- **mc-game-logic Degraded**: placeholder image (`eclipse-temurin:21-jre-bookworm`) を使用中。CI/CD で `ghcr.io/strategy-games/game-logic-api:debug` をビルド・push するか、PVC (`game-logic-api-jar`) に JAR を手動配置するまで Degraded のまま。
