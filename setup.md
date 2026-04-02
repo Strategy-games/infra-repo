@@ -429,13 +429,27 @@ kubectl get storageclass
 
 | Variable | Sensitive | 説明 |
 |---|---|---|
-| `cloudflare_api_token` | ✓ | Cloudflare API Token (Zone:Edit, DNS:Edit, Access:Edit) |
+| `cloudflare_api_token` | ✓ | Cloudflare API Token (下記権限で作成したもの) |
 | `cloudflare_zone_id` | - | Cloudflare ゾーン ID |
 | `cloudflare_account_id` | - | Cloudflare アカウント ID |
 | `github_token` | ✓ | GitHub PAT (repo + org:write) |
 | `k8s_client_certificate` | ✓ | kubeconfig の client-certificate-data (base64) |
 | `k8s_client_key` | ✓ | kubeconfig の client-key-data (base64) |
 | `k8s_cluster_ca_certificate` | ✓ | kubeconfig の certificate-authority-data (base64) |
+
+#### Cloudflare API Token の必要権限
+
+「ゾーン DNS を編集する」テンプレートをベースに以下の権限を設定する:
+
+| リソース | 権限 | 理由 |
+|---|---|---|
+| ゾーン | DNS / 編集 | DNS レコード管理 |
+| ゾーン | ゾーン / 編集 | ファイアウォールルールセット管理 |
+| ゾーン | アクセス: アプリおよびポリシー / 編集 | Zone-level Access 設定 |
+| **アカウント** | **Access: アプリおよびポリシー / 編集** | Access Application 作成 |
+| **アカウント** | **Cloudflare Tunnel / 編集** | Tunnel 作成・設定 (旧 Argo Tunnel) |
+
+> TTL・Client IP Filtering は空白 (無期限・制限なし) で OK
 
 ```bash
 # kubeconfig から各値を取得するコマンド例
