@@ -182,7 +182,7 @@ graph LR
 | `cert-manager` | charts.jetstack.io | TLS 証明書自動発行 |
 | `monitoring/prometheus` | prometheus-community | メトリクス収集 |
 | `monitoring/grafana` | grafana.github.io | ダッシュボード |
-| `synology-csi` | charts.synology.com | NAS 永続ボリューム |
+| `synology-csi` | github.com/SynologyOpenSource/synology-csi | NAS 永続ボリューム |
 | `velero` | vmware-tanzu | k8s リソースバックアップ |
 
 ---
@@ -316,3 +316,27 @@ gitGraph
 |---|---|---|---|
 | `debug` | `infra-debug` | `debug` | `minecraft-debug` |
 | `main` | `infra-prod` (未作成) | `main` | `minecraft` |
+
+---
+
+## デプロイ状況 (debug ブランチ)
+
+| コンポーネント | 状態 | 備考 |
+|---|---|---|
+| Proxmox VM (CP/WK) | ✅ 稼働中 | cloud-init snippet 方式 |
+| Cilium CNI | ✅ 稼働中 | kube-proxy 置換モード |
+| MetalLB | ✅ 稼働中 | L2 モード |
+| Synology NAS 疎通 | ✅ 確認済み | 192.168.10.50 |
+| Synology CSI | 🔧 設定中 | kubectl apply 方式 |
+| ArgoCD | ✅ Helm インストール済み | Terraform apply 完了 |
+| Cloudflare DNS/Tunnel | ✅ 作成済み | Terraform apply 完了 |
+| GitHub チーム/ブランチ保護 | ✅ 設定済み | public リポジトリ必須 |
+| Cloudflare WAF Ruleset | ⏸️ スキップ | 有料プラン必要 |
+| MC サーバー | ⏳ ArgoCD sync 待ち | |
+
+### 既知の制約
+
+- **Cloudflare WAF Ruleset**: `http_request_firewall_custom` フェーズは Pro プラン以上が必要。`cloudflare_firewall.tf` はコメントアウト済み。
+- **GitHub ブランチ保護**: Free プランでは public リポジトリのみ有効。`visibility = "public"` に設定済み。
+- **Terraform Cloud 実行モード**: プライベートクラスタのため **Local モード** で実行。
+- **Synology CSI**: 公式 Helm リポジトリが存在しないため `kubectl apply` で直接インストール。

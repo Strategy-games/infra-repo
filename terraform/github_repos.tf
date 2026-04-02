@@ -1,7 +1,7 @@
 resource "github_repository" "infra_repo" {
   name        = "infra-repo"
   description = "CI/CDパイプライン管理・k8sマニフェスト・Terraform IaC"
-  visibility  = "private"
+  visibility  = "public"  # ブランチ保護は GitHub Free では public リポジトリのみ有効
 
   has_issues   = true
   has_projects = false

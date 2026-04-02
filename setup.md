@@ -521,6 +521,8 @@ export TF_VAR_k8s_cluster_ca_certificate="$(kubectl config view --raw --minify -
 
 ### 10-6. Terraform 実行
 
+ArgoCD CRD と残りのリソースで依存関係があるため **2段階** で apply する。
+
 ```bash
 cd ~/infra-repo/terraform
 
@@ -528,9 +530,33 @@ cd ~/infra-repo/terraform
 terraform login
 
 terraform init
-terraform plan   # 内容を確認
-terraform apply  # 適用 (ArgoCD インストール含む)
+
+# Phase 1: ArgoCD を先にインストール (Application CRD を登録)
+terraform apply -target=helm_release.argocd
+
+# Phase 2: 残り全リソースを適用
+terraform apply
 ```
+
+### 10-7. 既存リソースが存在する場合のインポート
+
+Step 8/9 で手動作成した Namespace など既存リソースがある場合はインポートする:
+
+```bash
+terraform import kubernetes_namespace.metallb_system metallb-system
+terraform import kubernetes_namespace.synology_csi synology-csi
+
+# GitHub リポジトリが既に存在する場合
+terraform import github_repository.infra_repo infra-repo
+```
+
+### ⚠️ 既知の制約
+
+| 問題 | 原因 | 対処 |
+|---|---|---|
+| `cloudflare_ruleset` 認証エラー | Cloudflare 有料プランが必要 | `cloudflare_firewall.tf` をコメントアウト済み |
+| GitHub ブランチ保護エラー | Organization Free プランは public リポジトリのみ有効 | `visibility = "public"` に設定 |
+| Terraform Cloud リモート実行でk8s接続不可 | TF Cloud サーバーからプライベート IP に到達不可 | Workspace を **Local 実行モード** に変更 |
 
 ---
 
