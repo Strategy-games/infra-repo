@@ -72,7 +72,7 @@ spec:
         name: data
       spec:
         accessModes: ["ReadWriteOnce"]
-        storageClassName: synology-csi
+        storageClassName: synology-iscsi-storage
         resources:
           requests:
             storage: 20Gi

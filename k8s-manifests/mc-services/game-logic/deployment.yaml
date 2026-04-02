@@ -86,7 +86,7 @@ metadata:
     description: "ゲームロジック API JAR ファイル格納 PVC (CI/CD で自動更新)"
 spec:
   accessModes: ["ReadWriteMany"]
-  storageClassName: synology-csi
+  storageClassName: synology-iscsi-storage
   resources:
     requests:
       storage: 1Gi

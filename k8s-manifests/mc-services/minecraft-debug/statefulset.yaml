@@ -98,7 +98,7 @@ spec:
         name: data
       spec:
         accessModes: ["ReadWriteOnce"]
-        storageClassName: synology-csi
+        storageClassName: synology-iscsi-storage
         resources:
           requests:
             storage: 30Gi
@@ -112,7 +112,7 @@ metadata:
     description: "カスタムプラグイン JAR 格納用 PVC (TechTree, MegaEng, ICBM, Decision等)"
 spec:
   accessModes: ["ReadWriteMany"]
-  storageClassName: synology-csi
+  storageClassName: synology-iscsi-storage
   resources:
     requests:
       storage: 5Gi

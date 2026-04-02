@@ -7,7 +7,7 @@ prometheus:
     storageSpec:
       volumeClaimTemplate:
         spec:
-          storageClassName: synology-csi
+          storageClassName: synology-iscsi-storage
           accessModes: ["ReadWriteOnce"]
           resources:
             requests:
@@ -26,7 +26,7 @@ alertmanager:
     storage:
       volumeClaimTemplate:
         spec:
-          storageClassName: synology-csi
+          storageClassName: synology-iscsi-storage
           accessModes: ["ReadWriteOnce"]
           resources:
             requests:

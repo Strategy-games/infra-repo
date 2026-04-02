@@ -12,7 +12,7 @@ service:
 
 persistence:
   enabled: true
-  storageClassName: synology-csi
+  storageClassName: synology-iscsi-storage
   size: 10Gi
 
 resources:

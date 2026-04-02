@@ -58,7 +58,7 @@ metadata:
   namespace: minecraft-debug
 spec:
   accessModes: ["ReadWriteOnce"]
-  storageClassName: synology-csi
+  storageClassName: synology-iscsi-storage
   resources:
     requests:
       storage: 50Gi
